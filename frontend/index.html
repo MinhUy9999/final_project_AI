@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.html">E-commerce AI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="cart.html"><i class="bi bi-cart me-1"></i>Giỏ hàng</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="header text-center text-white">
+        <div class="container">
+            <h1 class="display-4 fw-bold animate__animated animate__fadeIn">Khám phá sản phẩm với AI</h1>
+            <p class="lead animate__animated animate__fadeIn" style="animation-delay: 0.3s;">Tải ảnh lên để nhận diện và thêm vào bộ sưu tập của bạn!</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <!-- Upload Form -->
+                <div class="card shadow-lg p-4 animate__animated animate__zoomIn">
+                    <h3 class="text-center mb-4 text-gradient">Phân loại sản phẩm</h3>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="productImage" class="form-label">Chọn hình ảnh</label>
+                            <input type="file" class="form-control custom-input" id="productImage" name="image" accept="image/*" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 btn-gradient">Phân loại ngay</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product List Section -->
+        <div class="row justify-content-center mt-5" id="productList">
+            <div class="col-md-10 col-lg-10">
+                <h2 class="text-center mb-4 text-gradient">Danh sách sản phẩm</h2>
+                <div id="productItems" class="row"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer text-white text-center">
+        <div class="container">
+            <p class="mb-0">© 2025 E-commerce AI. Powered by xAI.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+
+        function displayProducts() {
+            const productItems = document.getElementById('productItems');
+            productItems.innerHTML = '';
+            if (products.length === 0) {
+                productItems.innerHTML = '<p class="text-center text-muted">Chưa có sản phẩm nào.</p>';
+            } else {
+                products.forEach(product => {
+                    productItems.innerHTML += `
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card product-card shadow-lg animate__animated animate__fadeInUp">
+                                <img src="${product.image}" class="card-img-top" alt="${product.name}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${product.name}</h5>
+                                    <p class="card-text text-muted">${product.description}</p>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <button class="btn btn-outline-danger favorite-btn" data-id="${product.id}">
+                                            <i class="bi ${product.favorite ? 'bi-heart-fill' : 'bi-heart'}"></i>
+                                            ${product.favorite ? 'Đã yêu thích' : 'Yêu thích'}
+                                        </button>
+                                        <a href="cart.html" class="btn btn-outline-primary"><i class="bi bi-cart"></i></a>
+                                    </div>
+                                    <form class="review-form" data-id="${product.id}">
+                                        <input type="text" class="form-control custom-input mb-2 review-text" placeholder="Nhập nhận xét..." required>
+                                        <button type="submit" class="btn btn-success w-100 btn-gradient">Gửi</button>
+                                    </form>
+                                    <p class="sentiment-result mt-3 text-center">
+                                        ${product.sentiment ? `
+                                            <span class="badge ${product.sentiment === 'Vui' ? 'bg-success' : 'bg-danger'}">
+                                                <i class="bi ${product.sentiment === 'Vui' ? 'bi-emoji-smile' : 'bi-emoji-frown'} me-1"></i>
+                                                ${product.sentiment}
+                                            </span>
+                                        ` : ''}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.querySelectorAll('.favorite-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const productId = this.getAttribute('data-id');
+                        const product = products.find(p => p.id == productId);
+                        product.favorite = !product.favorite;
+                        localStorage.setItem('products', JSON.stringify(products));
+                        displayProducts();
+                    });
+                });
+
+                document.querySelectorAll('.review-form').forEach(form => {
+                    form.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        const productId = this.getAttribute('data-id');
+                        const text = this.querySelector('.review-text').value;
+                        const sentimentResult = this.nextElementSibling;
+
+                        sentimentResult.innerText = 'Đang xử lý...';
+                        sentimentResult.className = 'sentiment-result mt-3 text-center text-muted';
+
+                        try {
+                            const response = await fetch('http://localhost:5000/reviews', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text, product_id: productId })
+                            });
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.error || 'Network response was not ok');
+                            }
+                            const data = await response.json();
+                            sentimentResult.innerHTML = `
+                                <span class="badge ${data.sentiment === 'Vui' ? 'bg-success' : 'bg-danger'}">
+                                    <i class="bi ${data.sentiment === 'Vui' ? 'bi-emoji-smile' : 'bi-emoji-frown'} me-1"></i>
+                                    ${data.sentiment}
+                                </span>
+                            `;
+                            const product = products.find(p => p.id == productId);
+                            product.sentiment = data.sentiment;
+                            localStorage.setItem('products', JSON.stringify(products));
+                        } catch (error) {
+                            sentimentResult.innerText = `Lỗi: ${error.message}`;
+                            sentimentResult.className = 'sentiment-result mt-3 text-center text-danger';
+                        }
+                    });
+                });
+            }
+        }
+
+        window.onload = displayProducts;
+
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('http://localhost:5000/classify', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Network response was not ok');
+                }
+                const data = await response.json();
+                const product = {
+                    id: Date.now(),
+                    image: data.image,
+                    name: data.category.charAt(0).toUpperCase() + data.category.slice(1),
+                    confidence: data.confidence,
+                    description: data.description,
+                    sentiment: null,
+                    favorite: false
+                };
+                products.push(product);
+                localStorage.setItem('products', JSON.stringify(products));
+                displayProducts();
+            } catch (error) {
+                alert(`Lỗi: ${error.message}`);
+            }
+        });
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+</head>
+<body>
