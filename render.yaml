@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ecommerce-ai
+    env: docker
+    plan: free
+    region: oregon  # Chọn vùng gần nhất, ví dụ: Oregon (US West)
+    dockerfilePath: ./Dockerfile  # Đường dẫn đến Dockerfile
+    autoDeploy: true  # Tự động deploy khi push lên GitHub
+    healthCheckPath: /  # Kiểm tra sức khỏe ứng dụng bằng route gốc
+    envVars:
+      - key: PORT
+        value: 5000  # Cổng mà Flask chạy (phải khớp với app.py và Dockerfile)
+      - key: HF_API_KEY  # Biến môi trường cho API Key Hugging Face
+        sync: false  # Không đồng bộ tự động, nhập thủ công trên Render Dashboard
