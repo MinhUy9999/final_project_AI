@@ -4,22 +4,14 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, decode_predictions
 import requests
-import os
 import base64
 
 app = Flask(__name__)
 CORS(app)
 
-# Load mô hình TensorFlow
-model_path = 'model_weights/model.h5'
-if not os.path.exists(model_path):
-    print("Creating MobileNetV2...")
-    model = MobileNetV2(weights='imagenet')
-    os.makedirs('model_weights', exist_ok=True)
-    model.save(model_path)
-else:
-    model = tf.keras.models.load_model(model_path)
-    print("Model loaded")
+# Khởi tạo MobileNetV2 với trọng số ImageNet
+print("Creating MobileNetV2 with ImageNet weights...")
+model = MobileNetV2(weights='imagenet')
 
 # Hugging Face API
 HF_API_URL = "https://api-inference.huggingface.co/models/distilbert-base-uncased-finetuned-sst-2-english"
