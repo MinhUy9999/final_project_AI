@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import tensorflow as tf
 import numpy as np
@@ -6,7 +6,7 @@ from tensorflow.keras.applications.mobilenet import MobileNet, decode_prediction
 import requests
 import base64
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', template_folder='.')
 CORS(app)
 
 # Khởi tạo biến model là None, sẽ tải khi cần
@@ -23,34 +23,44 @@ def load_model():
         print("Loading MobileNet with ImageNet weights...")
         model = MobileNet(weights='imagenet')
 
+@app.route('/')
+def serve_index():
+    """Phục vụ index.html cho route gốc"""
+    return send_from_directory('.', 'index.html')
+
+@app.route('/cart.html')
+def serve_cart():
+    """Phục vụ cart.html"""
+    return send_from_directory('.', 'cart.html')
+
+@app.route('/assets/<path:path>')
+def serve_static(path):
+    """Phục vụ file tĩnh từ thư mục assets"""
+    return send_from_directory('assets', path)
+
 @app.route('/classify', methods=['POST'])
 def classify_image():
     """Phân loại hình ảnh với MobileNet"""
-    load_model()  # Tải mô hình nếu chưa được tải
+    load_model()
     if 'image' not in request.files:
         return jsonify({'error': 'No image provided'}), 400
     image = request.files['image']
     try:
-        # Xử lý hình ảnh
         img = tf.image.decode_image(image.read(), channels=3)
         img = tf.image.resize(img, [224, 224])
         img = img / 255.0
         prediction = model.predict(img[tf.newaxis, ...])
         decoded = decode_predictions(prediction, top=1)[0][0]
         
-        # Trích xuất kết quả
         category = decoded[1]
         confidence = float(decoded[2])
         description = f"Đây là một {category} chất lượng cao, được dự đoán với độ tin cậy {confidence:.2f}."
         
-        # Mã hóa base64 cho hình ảnh
         image.seek(0)
         image_base64 = base64.b64encode(image.read()).decode('utf-8')
         
-        # Log kết quả
         print(f"Predicted: {category} (Confidence: {confidence:.2f})")
         
-        # Giải phóng bộ nhớ
         del img
         del prediction
         
@@ -74,7 +84,7 @@ def analyze_reviews():
     payload = {"inputs": text}
     try:
         response = requests.post(HF_API_URL, headers=HF_HEADERS, json=payload)
-        response.raise_for_status()  # Ném lỗi nếu request thất bại
+        response.raise_for_status()
         result = response.json()
         sentiment = max(result[0], key=lambda x: x['score'])['label']
         sentiment_text = 'Vui' if sentiment == 'POSITIVE' else 'Không vui'
